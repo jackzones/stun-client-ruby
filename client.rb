@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 require 'socket'
 require 'timeout'
+require 'securerandom'
 if RUBY_VERSION < '1.9.2'
   require 'message'
 else
@@ -13,11 +14,10 @@ class Client
   STATE_IP_DIFF = 2
   STATE_TEST2 = 3
   STATE_TEST3 = 4
-  
+
   def initialize(host, port)
     @host = host
     @port = port
-    @rand = Random.new
     @state = STATE_INIT
     @socket = UDPSocket.new
     @socket.connect(@host, @port)
@@ -123,7 +123,7 @@ class Client
       begin
         timeout(time) {
           # トランザクションID
-          id = @rand.bytes(16)
+          id = SecureRandom.random_bytes(16)
           msg = Message.new(id)
           msg.type = Message::MESSAGE_BINDING_REQ
           if num == 2
