@@ -20,14 +20,14 @@ class Client
     @port = port
     @state = STATE_INIT
     @socket = UDPSocket.new
-    @socket.connect(@host, @port)
+#    @socket.connect(@host, @port)
   end
 
   def run
     while true
       case @state
       when STATE_INIT then
-        msg = self.test(1, @socket)
+        msg = self.test(1, @host, @port)
         if msg.nil?
           puts 'UDP Blocked'
           return nil
@@ -58,7 +58,7 @@ class Client
           end
         end
       when STATE_IP_SAME then
-        msg = self.test(2, @socket)
+        msg = self.test(2, @host, @port)
         if msg.nil?
           puts 'Sym. UDP Firewall'
           return nil
@@ -70,7 +70,7 @@ class Client
           return nil
         end
       when STATE_IP_DIFF then
-        msg = self.test(2, @socket)
+        msg = self.test(2, @host, @port)
         if msg.nil?
           @state = STATE_TEST2
         elsif msg.type == Message::MESSAGE_BINDING_ERR_RESP
@@ -81,9 +81,9 @@ class Client
           return nil
         end
       when STATE_TEST2
-        @alter_socket = UDPSocket.new
-        @alter_socket.connect(@alter_host, @alter_port)
-        msg = self.test(1, @alter_socket)
+#        @alter_socket = UDPSocket.new
+#        @alter_socket.connect(@alter_host, @alter_port)
+        msg = self.test(1, @alter_host, @alter_port)
         my_addr = @socket.addr
         my_addr_host = my_addr[3]
         my_addr_port = my_addr[1]
@@ -102,7 +102,7 @@ class Client
           @state = STATE_TEST3
         end
       when STATE_TEST3
-        msg = self.test(3, @socket)
+        msg = self.test(3, @host, @port)
         if msg.nil?
           puts 'Port Restricted'
           return nil
@@ -117,7 +117,7 @@ class Client
     end
   end
 
-  def test(num, socket)
+  def test(num, host, port)
     time = 0.1
     while (time <= 1.6)
       begin
@@ -137,11 +137,11 @@ class Client
             msg.attrs << attr
           end
           data = msg.pack
-          socket.send(data, 0)
-          data, addr = socket.recvfrom(1000)
+          @socket.send(data, 0, host, port)
+          data, addr = @socket.recvfrom(1000)
           res_msg = Message.new(id)
           res_msg.unpack(data)
-          my_addr = socket.addr
+          my_addr = @socket.addr
           puts 'my addr = %s:%d'%[my_addr[3], my_addr[1]]
           mapped_addr = res_msg.attrs.find{|attr|attr.kind_of?(MappedAddress)}
           puts 'mapped addr = %s:%d'%[mapped_addr.address, mapped_addr.port]
